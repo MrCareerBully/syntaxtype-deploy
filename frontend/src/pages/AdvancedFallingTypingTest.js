@@ -1,0 +1,302 @@
+import React, { useState, useEffect, useRef } from "react";
+import '../css/FallingTypingTest.css';
+
+const GAME_AREA_HEIGHT = 500;
+
+const AdvancedFallingTypingTest = () => {
+  const [gameDuration, setGameDuration] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [availableWords, setAvailableWords] = useState([]);
+  const [wrongWordsPool, setWrongWordsPool] = useState([]);
+  const [fallingWords, setFallingWords] = useState([]);
+  const [currentInput, setCurrentInput] = useState("");
+  const [activeWordId, setActiveWordId] = useState(null);
+  const [score, setScore] = useState(0);
+  const latestScoreRef = useRef(score);
+  const [isGameOver, setIsGameOver] = useState(false);
+  const [lives, setLives] = useState(null);
+  const [useLives, setUseLives] = useState(false);
+  const [speed, setSpeed] = useState(1);
+
+  const wordIdCounter = useRef(0);
+  const fallingWordsRef = useRef([]);
+
+  const fetchChallengeById = async (id) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/challenges/falling/advanced/${id}`);
+      const challenge = await res.json();
+      if (challenge && challenge.words?.length > 0) {
+        setAvailableWords(challenge.words.map(w => w.trim()));
+        setWrongWordsPool((challenge.wrongWords || []).map(w => w.trim()));
+        setGameDuration(challenge.testTimer || challenge.duration || 60);
+        setTimeLeft(challenge.testTimer || challenge.duration || 60);
+        setSpeed(challenge.speed || 1);
+
+        if (challenge.maxLives && challenge.maxLives > 0) {
+          setUseLives(true);
+          setLives(challenge.maxLives);
+        } else {
+          setUseLives(false);
+          setLives(null);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch advanced challenge:", err);
+    }
+  };
+
+  useEffect(() => {
+    const challenge = JSON.parse(sessionStorage.getItem("fallingChallenge"));
+    if (challenge) {
+      fetchChallengeById(challenge.challengeId);
+    }
+  }, []);
+
+  useEffect(() => {
+    latestScoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    if (isGameOver) {
+      fetch("http://localhost:8080/api/scores/falling", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          score,
+          timeInSeconds: gameDuration,
+          challengeType: "advanced_falling_typing_test",
+        }),
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to save score");
+        console.log("✅ Advanced falling score submitted!");
+      })
+      .catch(err => console.error("❌ Error submitting score:", err));
+    }
+  }, [isGameOver]);
+
+  useEffect(() => {
+    if (isGameOver || timeLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsGameOver(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft, isGameOver]);
+
+  useEffect(() => {
+    if ((availableWords.length === 0 && wrongWordsPool.length === 0) || isGameOver) return;
+
+    const spawnInterval = setInterval(() => {
+      const useWrong = Math.random() < 0.25 && wrongWordsPool.length > 0;
+      const word = useWrong
+        ? wrongWordsPool[Math.floor(Math.random() * wrongWordsPool.length)]
+        : availableWords[Math.floor(Math.random() * availableWords.length)];
+
+      const newWord = {
+        id: wordIdCounter.current++,
+        text: word,
+        y: 0,
+        x: Math.random() * 80,
+        isWrong: useWrong,
+      };
+
+      setFallingWords(prev => {
+        const updated = [...prev, newWord];
+        fallingWordsRef.current = updated;
+        return updated;
+      });
+    }, 2000 / speed);
+
+    const fallInterval = setInterval(() => {
+      let lostWords = 0;
+
+      const updated = fallingWordsRef.current.reduce((acc, word) => {
+        const newY = word.y + 5 * speed;
+        if (newY > GAME_AREA_HEIGHT) {
+          if (useLives && !word.isWrong) lostWords += 1;
+          return acc; // remove
+        }
+        acc.push({ ...word, y: newY });
+        return acc;
+      }, []);
+
+      setFallingWords(updated);
+      fallingWordsRef.current = updated;
+
+      if (lostWords > 0 && useLives) {
+        setLives(prev => {
+          const updatedLives = prev - lostWords;
+          if (updatedLives <= 0) {
+            setIsGameOver(true);
+            return 0;
+          }
+          return updatedLives;
+        });
+      }
+    }, 200);
+
+    return () => {
+      clearInterval(spawnInterval);
+      clearInterval(fallInterval);
+    };
+  }, [availableWords, wrongWordsPool, isGameOver, speed, useLives]);
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setCurrentInput(value);
+
+    if (value === "") {
+      setActiveWordId(null);
+      return;
+    }
+
+    const match = fallingWordsRef.current.find(word => word.text.startsWith(value));
+
+    if (match) {
+      setActiveWordId(match.id);
+      if (value === match.text) {
+        if (match.isWrong) {
+          if (useLives) {
+            setLives(prev => {
+              const updated = prev - 1;
+              if (updated <= 0) {
+                setIsGameOver(true);
+                return 0;
+              }
+              return updated;
+            });
+          }
+        } else {
+          setScore(prev => prev + 1);
+        }
+
+        setFallingWords(prev => {
+          const updated = prev.filter(word => word.id !== match.id);
+          fallingWordsRef.current = updated;
+          return updated;
+        });
+        setCurrentInput("");
+        setActiveWordId(null);
+      }
+    } else {
+      setActiveWordId(null);
+    }
+  };
+
+  const handleRestart = () => {
+    const challenge = JSON.parse(sessionStorage.getItem("fallingChallenge"));
+    setFallingWords([]);
+    fallingWordsRef.current = [];
+    setCurrentInput("");
+    setActiveWordId(null);
+    setScore(0);
+    setIsGameOver(false);
+    wordIdCounter.current = 0;
+
+    if (challenge?.challengeId) {
+      fetchChallengeById(challenge.challengeId);
+    } else {
+      setAvailableWords([]);
+      setWrongWordsPool([]);
+      setGameDuration(60);
+      setTimeLeft(60);
+      setSpeed(1);
+      setUseLives(false);
+      setLives(null);
+    }
+  };
+
+  const renderWord = (word) => {
+    if (word.id !== activeWordId) return word.text;
+    return [...word.text].map((char, i) => (
+      <span key={i} style={{ color: currentInput[i] === char ? "lime" : "yellow" }}>
+        {char}
+      </span>
+    ));
+  };
+
+  return (
+    <div style={{ padding: "2rem" }}>
+      <h2>Advanced Falling Typing Test</h2>
+      <p>
+        Score: {score} | Time Left: {timeLeft}s {useLives && `| Lives: ${lives}`}
+      </p>
+
+      <div
+        className="game-area"
+        style={{
+          backgroundImage: "url('/images/background.jpeg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          position: 'relative',
+          height: `${GAME_AREA_HEIGHT}px`,
+          overflow: 'hidden',
+          border: '2px solid #ccc'
+        }}
+      >
+        {fallingWords.map(word => (
+          <div
+            key={word.id}
+            className="falling-word"
+            style={{
+              position: 'absolute',
+              top: `${word.y}px`,
+              left: `${word.x}%`,
+              fontSize: '18px',
+              color: word.isWrong ? 'yellow' : 'yellow'
+            }}
+          >
+            {renderWord(word)}
+          </div>
+        ))}
+
+        {isGameOver && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '40%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              background: 'rgba(0,0,0,0.7)',
+              padding: '20px',
+              borderRadius: '10px',
+              color: 'white',
+              fontSize: '24px',
+              textAlign: 'center'
+            }}
+          >
+            <p>Game Over!</p>
+            <p>Final Score: {score}</p>
+            <button onClick={handleRestart} style={{ padding: '10px 20px', fontSize: '16px' }}>
+              Restart
+            </button>
+          </div>
+        )}
+      </div>
+
+      {!isGameOver && (
+        <input
+          type="text"
+          placeholder="Start typing..."
+          value={currentInput}
+          onChange={handleInputChange}
+          style={{ width: "100%", marginTop: "1rem", padding: "10px", fontSize: "16px" }}
+          autoFocus
+        />
+      )}
+    </div>
+  );
+};
+
+export default AdvancedFallingTypingTest;

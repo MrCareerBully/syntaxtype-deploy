@@ -1,0 +1,64 @@
+.bookworm-container {
+  text-align: center;
+  font-family: "Segoe UI", Arial, sans-serif;
+  margin-top: 40px;
+}
+
+.grid {
+  display: inline-block;
+  border: 3px solid #222;
+  background: #f8f8f8;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.row {
+  display: flex;
+}
+
+.cell {
+  width: 45px;
+  height: 45px;
+  margin: 2px;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s, background-color 0.2s;
+}
+
+.cell:hover {
+  transform: scale(1.1);
+}
+
+.cell.selected {
+  background-color: #4caf50;
+}
+
+.letter-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 5px;
+  pointer-events: none;
+}
+
+.controls {
+  margin-top: 20px;
+}
+
+button {
+  margin: 5px;
+  padding: 8px 16px;
+  background: #3f51b5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:hover {
+  background: #303f9f;
+}

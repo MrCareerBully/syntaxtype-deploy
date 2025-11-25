@@ -1,0 +1,219 @@
+/* Center the entire component */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9f9f9;
+}
+
+.typing-container {
+  border: 1px solid #ccc;
+  padding: 1rem;
+  background-color: #fff;
+  border-radius: 8px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-top: 1rem;
+}
+
+.tab-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tab-button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background-color: #e0e0e0;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+  background-color: #cfcfcf;
+}
+
+.tab-button.active {
+  background-color: #4CAF50;
+  color: white;
+  font-weight: bold;
+}
+
+ul.challenge-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+  max-width: 400px;
+  text-align: center;
+}
+
+ul.challenge-list li {
+  margin: 0.5rem 0;
+}
+
+ul.challenge-list li button {
+  padding: 0.5rem 1.5rem;
+  border-radius: 5px;
+  border: none;
+  background-color: #1976d2;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+ul.challenge-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+.challenge-item {
+  display: flex;
+  align-items: center;
+  background-color: #e4dcd5;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+  padding: 0.5rem 1rem;
+  gap: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffcc00;
+  color: #333;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.challenge-button {
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 1rem;
+  flex-grow: 1;
+  cursor: pointer;
+  color: #4b2e2e;
+  padding: 0;
+}
+
+.challenge-button:hover {
+  text-decoration: underline;
+}
+
+textarea {
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #fdfdfd;
+}
+
+h2, h3 {
+  text-align: center;
+}
+
+.results-box {
+  margin-top: 1rem;
+  background-color: #e8f5e9;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #c8e6c9;
+}
+/* Hamburger icon */
+.hamburger-icon {
+  font-size: 24px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  margin-right: 20px;
+}
+
+/* Full-screen overlay behind the menu */
+.side-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex;
+}
+
+/* Sidebar itself */
+.side-menu {
+  width: 250px;
+  background-color: #2c3e50;
+  height: 100%;
+  padding: 20px;
+  color: white;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease forwards;
+}
+
+/* Close button inside menu */
+.close-button {
+  font-size: 24px;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+/* Menu links */
+.menu-links {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.menu-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.menu-links a:hover {
+  background-color: #1abc9c;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+/* Animation */
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.navbar {
+  position: fixed; /* or fixed if you want it always on top when scrolling */
+  top: 0;
+  left: 0;
+  width: 100%;
+  background-color: #2c3e50;
+  color: white;
+align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+
+padding-right: 50px;
+
+
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
