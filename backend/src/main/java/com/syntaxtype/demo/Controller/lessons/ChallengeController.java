@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/challenges")
-@CrossOrigin(origins = "http://localhost:3000") // adjust for your frontend URL
 public class ChallengeController {
 
     private final ChallengeService service;

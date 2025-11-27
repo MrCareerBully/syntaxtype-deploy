@@ -21,13 +21,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
 
 
 import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+
 public class SecurityConfig {
+
+    @Value("${FRONTEND_URL:http://localhost:3000}")
+    private String frontendUrl;
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
@@ -69,9 +74,23 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
+        // Add frontend URL to allowed origins; support comma separated values in FRONTEND_URL
+        List<String> allowedOrigins = List.of("http://localhost:3000", "http://localhost:5173");
+        if (frontendUrl != null && !frontendUrl.isEmpty()) {
+            // handle multiple origins separated by comma
+            String[] extras = frontendUrl.split(",");
+            for (String origin : extras) {
+                String trimmed = origin.trim();
+                if (!trimmed.isEmpty() && !allowedOrigins.contains(trimmed)) {
+                    allowedOrigins = new java.util.ArrayList<>(allowedOrigins);
+                    allowedOrigins.add(trimmed);
+                }
+            }
+        }
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

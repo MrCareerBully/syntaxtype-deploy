@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/challenges/galaxy")
-@CrossOrigin(origins = "http://localhost:3000") // allow React
 public class GalaxyChallengeController {
 
     private final GalaxyChallengeService service;

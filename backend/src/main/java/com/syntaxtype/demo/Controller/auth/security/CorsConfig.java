@@ -10,7 +10,7 @@ import org.springframework.lang.NonNull;
 @Configuration
 public class CorsConfig {
 
-    @Value("${FRONTEND_URL}")
+    @Value("${FRONTEND_URL:}")
     private String frontendUrl;
 
     @Bean
@@ -18,11 +18,25 @@ public class CorsConfig {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
-                registry.addMapping("/**") // allow all paths
-                        .allowedOrigins("http://localhost:5173", "http://localhost:8080", frontendUrl) // allow your frontend
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                        .allowedHeaders("*");
-                        //.allowCredentials(true);
+                String[] defaultOrigins = new String[]{"http://localhost:5173", "http://localhost:8080", "http://localhost:3000"};
+                if (frontendUrl != null && !frontendUrl.isEmpty()) {
+                    String[] extras = frontendUrl.split(",");
+                    String[] merged = java.util.Arrays.copyOf(defaultOrigins, defaultOrigins.length + extras.length);
+                    for (int i = 0; i < extras.length; i++) {
+                        merged[defaultOrigins.length + i] = extras[i].trim();
+                    }
+                    registry.addMapping("/**") // allow all paths
+                            .allowedOrigins(merged)
+                            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                            .allowedHeaders("*")
+                            .allowCredentials(true);
+                } else {
+                    registry.addMapping("/**") // allow all paths
+                            .allowedOrigins(defaultOrigins)
+                            .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                            .allowedHeaders("*")
+                            .allowCredentials(true);
+                }
             }
         };
     }
