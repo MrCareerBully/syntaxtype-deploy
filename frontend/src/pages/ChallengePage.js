@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import '../css/InstructorModule.css'; // Reuse styles
+import { API_BASE } from '../utils/api';
  
 export default function ChallengePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -21,11 +22,11 @@ export default function ChallengePage() {
     const fetchChallenges = async () => {
       try {
         // Fetch normal challenges (Paragraph type)
-        const normalResponse = await fetch('http://localhost:8080/api/challenges');
+        const normalResponse = await fetch(`${API_BASE}/api/challenges`);
         const normalData = await normalResponse.json();
  
         // Fetch falling challenges (List of words)
-        const fallingResponse = await fetch('http://localhost:8080/api/challenges/falling');
+        const fallingResponse = await fetch(`${API_BASE}/api/challenges/falling`);
         const fallingData = await fallingResponse.json();
  
         // Set challenges into separate states
@@ -55,8 +56,8 @@ export default function ChallengePage() {
   const handleDeleteChallenge = async (challenge) => {
     try {
       const url = challenge.paragraph
-        ? `http://localhost:8080/api/challenges/${challenge.id}`
-        : `http://localhost:8080/api/challenges/falling/${challenge.id}`;
+        ? `${API_BASE}api/challenges/${challenge.id}`
+        : `${API_BASE}api/challenges/falling/${challenge.id}`;
  
       const response = await fetch(url, {
         method: 'DELETE',
@@ -295,8 +296,8 @@ function NormalTypingChallengeForm({ selectedChallenge, onSaved }) {
     try {
       const method = selectedChallenge ? 'PUT' : 'POST';
       const url = selectedChallenge
-        ? `http://localhost:8080/api/challenges/${selectedChallenge.id}`
-        : 'http://localhost:8080/api/challenges';
+        ? `${API_BASE}/api/challenges/${selectedChallenge.id}`
+        : `${API_BASE}/api/challenges`;
  
       const response = await fetch(url, {
         method,
@@ -353,8 +354,8 @@ function FallingTypingChallengeForm({ selectedChallenge, onSaved,fallingSpeed,
       try {
         const method = selectedChallenge ? 'PUT' : 'POST';
         const url = selectedChallenge
-          ? `http://localhost:8080/api/challenges/${selectedChallenge.id}`
-          : 'http://localhost:8080/api/challenges/falling';
+          ? `${API_BASE}/api/challenges/${selectedChallenge.id}`
+          : `${API_BASE}/api/challenges/falling`;
  
         const response = await fetch(url, {
           method,
@@ -453,7 +454,7 @@ function GalaxyTypingChallengeForm({ onSaved }) {
     const wordsArray = galaxyWords.split(',').map(word => word.trim());
  
     try {
-      const response = await fetch("http://localhost:8080/api/challenges/galaxy", {
+      const response = await fetch(`${API_BASE}/api/challenges/galaxy`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ words: wordsArray }),
@@ -581,7 +582,7 @@ const handleAddOption = () => {
     };
  
     try {
-      const response = await fetch("http://localhost:8080/api/quiz", {
+      const response = await fetch(`${API_BASE}/api/quiz`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(quizData),
@@ -774,8 +775,8 @@ function AdvancedFallingTypingChallengeForm({
     try {
       const method = selectedChallenge ? 'PUT' : 'POST';
       const url = selectedChallenge
-            ? `http://localhost:8080/api/challenges/falling/advanced/${selectedChallenge.challengeId}`
-            : 'http://localhost:8080/api/challenges/falling/advanced';
+            ? `${API_BASE}/api/challenges/falling/advanced/${selectedChallenge.challengeId}`
+            : `${API_BASE}/api/challenges/falling/advanced`;
  
       const response = await fetch(url, {
         method,

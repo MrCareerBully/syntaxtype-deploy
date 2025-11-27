@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { usePlayer } from "./usePlayer";
 import { useMap } from "./map";
+import { API_BASE } from '../utils/api';
 
 export default function Game() {
   const canvasRef = useRef(null);
@@ -46,7 +47,7 @@ const updatePowerups = () => {
   useEffect(() => {
     const fetchWords = async () => {
       try {
-        const res = await fetch("http://localhost:8080/api/challenges/galaxy/words");
+        const res = await fetch(`${API_BASE}/api/challenges/galaxy/words`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         setWords(data);

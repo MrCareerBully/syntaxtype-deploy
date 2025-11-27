@@ -13,6 +13,8 @@ import {
     CircularProgress
 } from '@mui/material';
 
+import { API_BASE } from '../utils/api';
+
 const LoginPage = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -38,7 +40,7 @@ const LoginPage = () => {
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:8080/api/auth/login', {
+            const response = await axios.post(`${API_BASE}/api/auth/login`, {
                 email,
                 password
             });

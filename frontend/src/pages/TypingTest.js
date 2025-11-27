@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import "../css/typingtest.css";
+import { API_BASE } from "../utils/api";
  
 const TypingTest = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,9 +27,9 @@ const [blankIndices, setBlankIndices] = useState([]);
   const fetchChallengeList = async (type) => {
     try {
       let url;
-      if (type === "normal") url = "http://localhost:8080/api/challenges";
-      else if (type === "falling") url = "http://localhost:8080/api/challenges/falling";
-      else if (type === "advancedFalling") url = "http://localhost:8080/api/challenges/falling/advanced";
+      if (type === "normal") url = `${API_BASE}/api/challenges`;
+      else if (type === "falling") url = `${API_BASE}/api/challenges/falling`;
+      else if (type === "advancedFalling") url = `${API_BASE}/api/challenges/falling/advanced`;
       else throw new Error("Unknown challenge type");
  
       const res = await fetch(url);
@@ -47,11 +48,11 @@ const [blankIndices, setBlankIndices] = useState([]);
     try {
       let url;
       if (challengeType === "normal") {
-        url = `http://localhost:8080/api/challenges/${challenge.challengeId}`;
+        url = `${API_BASE}/api/challenges/${challenge.challengeId}`;
       } else if (challengeType === "falling") {
-        url = `http://localhost:8080/api/challenges/falling/${challenge.challengeId}`;
+        url = `${API_BASE}/api/challenges/falling/${challenge.challengeId}`;
       } else if (challengeType === "advancedFalling") {
-        url = `http://localhost:8080/api/challenges/falling/advanced/${challenge.challengeId}`;
+        url = `${API_BASE}/api/challenges/falling/advanced/${challenge.challengeId}`;
       } else {
         throw new Error("Unknown challenge type");
       }
@@ -161,7 +162,7 @@ const [blankIndices, setBlankIndices] = useState([]);
     setScore(finalScore);
  
     // Save score
-    fetch("http://localhost:8080/api/scores", {
+    fetch(`${API_BASE}/api/scores`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

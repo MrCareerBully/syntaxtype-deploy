@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 // import "./SyntaxSaverLesson.css";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { API_BASE } from '../utils/api';
 
 export default function SyntaxSaverLesson({ quizId = 1, onBack }) {
   const [title, setTitle] = useState("");
@@ -17,7 +18,7 @@ export default function SyntaxSaverLesson({ quizId = 1, onBack }) {
   useEffect(() => {
     const fetchQuiz = async () => {
       try {
-        const res = await fetch(`http://localhost:8080/api/quiz/${quizId}`);
+        const res = await fetch(`${API_BASE}/api/quiz/${quizId}`);
         if (!res.ok) throw new Error("Failed to fetch quiz");
         const data = await res.json();
 

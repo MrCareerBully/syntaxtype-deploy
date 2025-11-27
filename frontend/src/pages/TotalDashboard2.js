@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import '../css/TotalDashboard.css'; // Make sure this CSS file includes the styles you shared
+import { API_BASE } from '../utils/api';
 
 const TotalDashboard2 = () => {
   const [fallingScores, setFallingScores] = useState([]);
@@ -7,7 +8,7 @@ const TotalDashboard2 = () => {
   
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/scores")
+    fetch(`${API_BASE}/api/scores`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch falling scores");
         return res.json();

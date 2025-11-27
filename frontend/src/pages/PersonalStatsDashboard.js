@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import '../css/TotalDashboard.css';
+import { API_BASE } from '../utils/api';
 
 const PersonalDashboard = () => {
   const [scores, setScores] = useState([]);
@@ -11,7 +12,7 @@ const PersonalDashboard = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:8080/api/scores')
+    fetch(`${API_BASE}/api/scores`)
       .then(res => res.json())
       .then(data => {
         // Separate scores

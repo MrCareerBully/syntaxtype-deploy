@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Editor } from '@tinymce/tinymce-react';
+import { API_BASE } from '../utils/api';
 
 const CreateLessonModule = () => {
   const [title, setTitle] = useState('');
@@ -15,7 +16,7 @@ const CreateLessonModule = () => {
     console.log("Submitting content:", content);
     
     try {
-      const response = await fetch('http://localhost:8080/api/lessons', {
+      const response = await fetch(`${API_BASE}/api/lessons`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, content }),

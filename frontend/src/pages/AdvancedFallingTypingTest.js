@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import '../css/FallingTypingTest.css';
+import { API_BASE } from "../utils/api.js";
+
 
 const GAME_AREA_HEIGHT = 500;
 
@@ -23,7 +25,7 @@ const AdvancedFallingTypingTest = () => {
 
   const fetchChallengeById = async (id) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/challenges/falling/advanced/${id}`);
+      const res = await fetch(`${API_BASE}/api/challenges/falling/advanced/${id}`);
       const challenge = await res.json();
       if (challenge && challenge.words?.length > 0) {
         setAvailableWords(challenge.words.map(w => w.trim()));
@@ -58,7 +60,7 @@ const AdvancedFallingTypingTest = () => {
 
   useEffect(() => {
     if (isGameOver) {
-      fetch("http://localhost:8080/api/scores/falling", {
+      fetch(`${API_BASE}/api/scores/falling`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

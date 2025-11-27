@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import SyntaxSaverLesson from "./SyntaxSaverLesson";
 // import "./SyntaxSaverLesson.css";
+import { API_BASE } from '../utils/api';
 
 export default function QuizMenu() {
   const [selectedQuiz, setSelectedQuiz] = useState(null);
@@ -12,7 +13,7 @@ export default function QuizMenu() {
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
-        const response = await fetch("http://localhost:8080/api/quiz");
+        const response = await fetch(`${API_BASE}/api/quiz`);
         if (!response.ok) throw new Error("Failed to load quizzes");
         const data = await response.json();
         setQuizzes(data);
