@@ -22,6 +22,27 @@ See the section about [running tests](https://facebook.github.io/create-react-ap
 ### `npm run build`
 
 Builds the app for production to the `build` folder.\
+Development proxy and environment variables
+-----------------------------------------
+To have the development server proxy API calls to a backend that can be changed by environment variable:
+
+1. Install dev dependency: `npm ci` (it will install `http-proxy-middleware`).
+2. Set `REACT_APP_BACKEND_URL` before running `npm start`:
+
+	- On Windows cmd:
+		```cmd
+		set REACT_APP_BACKEND_URL=http://localhost:8080 && npm start
+		```
+
+	- On PowerShell:
+		```powershell
+		$env:REACT_APP_BACKEND_URL = 'http://localhost:8080'; npm start
+		```
+
+3. `setupProxy.js` will use `REACT_APP_BACKEND_URL` as the proxy target for `/api` paths.
+
+For production builds, set `REACT_APP_API_BASE_URL` in the deployment environment (e.g., Render) and use `src/utils/api.js` helper to build absolute URLs to the backend in the client code.
+
 It correctly bundles React in production mode and optimizes the build for the best performance.
 
 The build is minified and the filenames include the hashes.\
