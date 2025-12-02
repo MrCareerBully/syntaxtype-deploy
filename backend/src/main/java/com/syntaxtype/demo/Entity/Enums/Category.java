@@ -4,5 +4,7 @@ public enum Category {
     CHALLENGES,
     TYPING_TESTS,
     FALLING_WORDS,
+    CROSSWORD,
+    GALAXY,
     OVERALL
 }

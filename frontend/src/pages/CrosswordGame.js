@@ -1,29 +1,34 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
  
+// Grid Dimensions and Constants
 const ROWS = 15;
 const COLS = 15;
+const NUM_WORDS = 10; // New constant to enforce 10 words
+const MAX_RETRIES = 50; // Safety limit for puzzle generation retries
  
+// Sample Dictionary for the puzzle
 const SAMPLE_DICTIONARY = [
   { word: "syntax", clue: "The rules that define the structure of code" },
   { word: "worm", clue: "A self-replicating computer program" },
   { word: "data", clue: "Information processed or stored by a computer" },
   { word: "variable", clue: "A container for storing data values" },
   { word: "tree", clue: "A hierarchical data structure" },
-  { word: "object", clue: "An instance of a class in programming" },
-  { word: "bookworm", clue: "Someone who loves reading" },
+  { word: "loop", clue: "A structure that repeats a block of code" },
+  { word: "structure", clue: "A user-defined data type that groups variables of different types" },
+  { word: "header", clue: "A file containing declarations and macros, included using #include" },
   { word: "code", clue: "Instructions written for a computer" },
-  { word: "react", clue: "A popular JavaScript UI library" },
+  { word: "operator", clue: "A symbol that performs an operation on variables or values" },
   { word: "grid", clue: "A structure of rows and columns" },
-  { word: "game", clue: "Interactive entertainment software" },
-  { word: "time", clue: "What clocks measure" },
-  { word: "home", clue: "Where you live" },
+  { word: "constant", clue: "A value that cannot be changed during program execution" },
+  { word: "debugging", clue: "The process of finding and fixing errors in code" },
+  { word: "overflow", clue: "An error caused when a value exceeds memory limits of its type" },
   { word: "virus", clue: "Malicious software that replicates itself" },
-  { word: "python", clue: "A popular programming language named after a comedy group" },
-  { word: "java", clue: "A programming language that runs on the JVM" },
-  { word: "ruby", clue: "A precious gemstone and programming language" },
-  { word: "dart", clue: "Programming language for Flutter apps" },
-  { word: "html", clue: "Markup language for creating web pages" },
-  { word: "css", clue: "Language used for styling HTML" },
+  { word: "recursion", clue: "A function that calls itself" },
+  { word: "parameter", clue: "A variable used to receive values passed to a function" },
+  { word: "semicolon", clue: "A symbol used to terminate statements in C" },
+  { word: "sizeof", clue: "An operator that returns the size of a data type or variable" },
+  { word: "buffer", clue: "Temporary storage used for data transfer" },
+  { word: "scope", clue: "The region of the program where a variable can be accessed" },
   { word: "logic", clue: "Reasoning or principles of correct thinking" },
   { word: "bug", clue: "An error or flaw in a program" },
   { word: "debug", clue: "To identify and remove errors in code" },
@@ -32,104 +37,201 @@ const SAMPLE_DICTIONARY = [
   { word: "stack", clue: "LIFO data structure" },
   { word: "queue", clue: "FIFO data structure" },
   { word: "index", clue: "A numerical position in an array" },
-  { word: "click", clue: "Mouse action to select an element" },
-  { word: "score", clue: "Points earned in a game" },
-  { word: "hint", clue: "A small piece of help or clue" }
+  { word: "case", clue: "A label used inside a switch statement" },
+  { word: "forloop", clue: "A looping structure with initialization, condition, and update expressions" },
+  { word: "whileloop", clue: "A loop that repeats as long as its condition is true" },
+  { word: "dowhileloop", clue: "A loop that executes once before checking the condition" },
+  { word: "switch", clue: "A multi-way branching syntax using case labels" },
+  { word: "printf", clue: "Syntax for printing formatted text" },
+  { word: "scanf", clue: "Syntax for reading input from stdin using format specifiers" },
+  { word: "void", clue: "A function that does not return a value" },
+  { word: "return", clue: "Syntax used to return data from a function" },
+  { word: "typedef", clue: " is a keyword used to create an alias (a new name) for an existing data type" },
+  { word: "struct", clue: "Syntax used to define a structure using struct keyword" },
+  { word: "macro", clue: "Using #define to define constant values or code fragments" },
 ];
  
-// --- Helpers
+// --- Helper Functions ---
+ 
+/** Creates an empty grid filled with the black-cell marker '#' */
 function makeFilledGrid(char = "#") {
   return Array.from({ length: ROWS }, () =>
     Array.from({ length: COLS }, () => char)
   );
 }
  
+/** Selects a random subset of words for the puzzle */
 function getRandomWords(n) {
   const shuffled = [...SAMPLE_DICTIONARY].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, n);
 }
  
-function buildCrossword(words) {
-  // grid initially all '#' (black)
-  const grid = makeFilledGrid("#");
-  const placements = [];
+/** * Checks if a word can be placed at a specific location and direction.
+ * Includes boundary collision checks for a cleaner crossword pattern.
+ */
+function canPlaceWord(grid, word, row, col, dir, isFirstWord = false) {
+  const len = word.length;
+  const dr = dir === "DOWN" ? 1 : 0;
+  const dc = dir === "ACROSS" ? 1 : 0;
  
-  // place first word horizontally in the middle
-  const first = words[0];
-  const startCol = Math.floor((COLS - first.word.length) / 2);
-  const midRow = Math.floor(ROWS / 2);
+  let intersections = 0;
  
-  for (let i = 0; i < first.word.length; i++) {
-    grid[midRow][startCol + i] = first.word[i].toUpperCase();
-  }
-  placements.push({ ...first, row: midRow, col: startCol, dir: "ACROSS" });
+  for (let i = 0; i < len; i++) {
+    const r = row + dr * i;
+    const c = col + dc * i;
  
-  // try to attach other words (mostly vertical or across depending)
-  for (let i = 1; i < words.length; i++) {
-    const w = words[i].word.toUpperCase();
-    let placed = false;
+    // 1. Out of bounds check
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return false;
  
-    for (const p of placements) {
-      for (let a = 0; a < p.word.length; a++) {
-        for (let b = 0; b < w.length; b++) {
-          if (p.word[a].toUpperCase() === w[b]) {
-            let row = p.row;
-            let col = p.col;
+    const cell = grid[r][c];
  
-            if (p.dir === "ACROSS") {
-              row = row - b;
-              col = col + a;
-              if (row >= 0 && row + w.length <= ROWS) {
-                // check vertical placement
-                let valid = true;
-                for (let k = 0; k < w.length; k++) {
-                  const ch = grid[row + k][col];
-                  if (ch !== "#" && ch !== w[k]) valid = false;
-                }
-                if (valid) {
-                  for (let k = 0; k < w.length; k++) {
-                    grid[row + k][col] = w[k];
-                  }
-                  placements.push({ ...words[i], row, col, dir: "DOWN" });
-                  placed = true;
-                }
-              }
-            } else {
-              // p.dir === "DOWN"
-              row = row + a;
-              col = col - b;
-              if (col >= 0 && col + w.length <= COLS) {
-                // check horizontal placement
-                let valid = true;
-                for (let k = 0; k < w.length; k++) {
-                  const ch = grid[row][col + k];
-                  if (ch !== "#" && ch !== w[k]) valid = false;
-                }
-                if (valid) {
-                  for (let k = 0; k < w.length; k++) {
-                    grid[row][col + k] = w[k];
-                  }
-                  placements.push({ ...words[i], row, col, dir: "ACROSS" });
-                  placed = true;
-                }
-              }
-            }
-            if (placed) break;
-          }
+    // 2. Letter collision check (must be empty or match the intersecting letter)
+    if (cell !== "#" && cell !== word[i]) return false;
+   
+    // 3. Count intersections
+    if (cell === word[i]) {
+        intersections++;
+    }
+ 
+    // 4. Parallel word check (only applies to non-intersecting letters in the new word)
+    if (cell === "#" || cell !== word[i]) {
+        if (dir === "ACROSS") {
+            // Check up/down neighbors for parallel collision
+            if (r > 0 && grid[r - 1][c] !== "#") return false;
+            if (r < ROWS - 1 && grid[r + 1][c] !== "#") return false;
+        } else { // DOWN
+            // Check left/right neighbors for parallel collision
+            if (c > 0 && grid[r][c - 1] !== "#") return false;
+            if (c < COLS - 1 && grid[r][c + 1] !== "#") return false;
         }
-        if (placed) break;
-      }
-      if (placed) break;
     }
   }
  
-  // number placements
-  placements.forEach((p, i) => {
-    p.number = i + 1;
-    p.word = p.word.toUpperCase();
-  });
+  // 5. Boundary collision check (cells immediately before/after the word must be empty)
+  // Check cell before the start
+  const rStartCheck = row - dr;
+  const cStartCheck = col - dc;
+  if (rStartCheck >= 0 && rStartCheck < ROWS && cStartCheck >= 0 && cStartCheck < COLS && grid[rStartCheck][cStartCheck] !== "#") return false;
+ 
+  // Check cell after the end
+  const rEndCheck = row + dr * len;
+  const cEndCheck = col + dc * len;
+  if (rEndCheck >= 0 && rEndCheck < ROWS && cEndCheck >= 0 && cEndCheck < COLS && grid[rEndCheck][cEndCheck] !== "#") return false;
+ 
+  // 6. Intersection requirement: for all words after the first, it must intersect at least once.
+  if (!isFirstWord && intersections === 0) return false;
+ 
+  return true;
+}
+ 
+/** Generates the crossword grid and placement data */
+function buildCrossword(words) {
+  const grid = makeFilledGrid("#");
+  const placements = [];
+  const numberMap = {}; // maps "r,c" -> number
+  let nextNumber = 1;
+ 
+  function assignNumber(r, c) {
+    const key = `${r},${c}`;
+    if (!numberMap[key]) {
+      numberMap[key] = nextNumber++;
+    }
+    // Returns the existing number or the newly assigned one.
+    return numberMap[key];
+  }
+ 
+  // 1. Place the first word ACROSS, centered
+  const first = words[0];
+  const midRow = Math.floor(ROWS / 2);
+  const startCol = Math.floor((COLS - first.word.length) / 2);
+  const firstWordUpper = first.word.toUpperCase();
+ 
+  if (canPlaceWord(grid, firstWordUpper, midRow, startCol, "ACROSS", true)) {
+    for (let i = 0; i < firstWordUpper.length; i++) {
+      grid[midRow][startCol + i] = firstWordUpper[i];
+    }
+    placements.push({
+      ...first,
+      word: firstWordUpper, // Store uppercase word in placement
+      row: midRow,
+      col: startCol,
+      dir: "ACROSS",
+      number: assignNumber(midRow, startCol) // Assign number for the first word
+    });
+  } else {
+      // If the very first word can't be placed (too long for grid), return empty.
+      return { grid: makeFilledGrid("#"), placements: [] };
+  }
+ 
+  // 2. Place remaining words by intersection only
+  for (let i = 1; i < words.length; i++) {
+    const wordObj = words[i];
+    const word = wordObj.word.toUpperCase();
+    let bestPlacement = null;
+ 
+    // Iterate through every already placed word (p)
+    for (const p of placements) {
+      const placedWord = p.word.toUpperCase();
+     
+      // Iterate through every letter index of the placed word (a)
+      for (let a = 0; a < placedWord.length; a++) {
+        // Iterate through every letter index of the new word (b)
+        for (let b = 0; b < word.length; b++) {
+          if (placedWord[a] === word[b]) {
+            // Potential intersection found!
+           
+            const newDir = p.dir === "ACROSS" ? "DOWN" : "ACROSS";
+           
+            // Calculate the starting row/col for the new word
+            const newRow = newDir === "DOWN" ? p.row - b : p.row + (p.dir === "DOWN" ? a : 0);
+            const newCol = newDir === "ACROSS" ? p.col - b : p.col + (p.dir === "ACROSS" ? a : 0);
+           
+            if (canPlaceWord(grid, word, newRow, newCol, newDir)) {
+              // We found a valid place, use it.
+              bestPlacement = { word: wordObj, row: newRow, col: newCol, dir: newDir };
+              break;
+            }
+          }
+        }
+        if (bestPlacement) break;
+      }
+      if (bestPlacement) break;
+    }
+ 
+    // Apply the placement if found
+    if (bestPlacement) {
+      const { word: wordObj, row, col, dir } = bestPlacement;
+      const wordStr = wordObj.word.toUpperCase();
+     
+      for (let k = 0; k < wordStr.length; k++) {
+        const r = row + (dir === "DOWN" ? k : 0);
+        const c = col + (dir === "ACROSS" ? k : 0);
+        grid[r][c] = wordStr[k];
+      }
+     
+      // CRITICAL: Assign number. If a word already starts at (row, col), it returns the existing number.
+      const number = assignNumber(row, col);
+      placements.push({ ...wordObj, word: wordStr, row, col, dir, number });
+    }
+  }
  
   return { grid, placements };
+}
+ 
+/** Function to consistently generate a puzzle with NUM_WORDS */
+function generatePuzzle() {
+  let attempts = 0;
+  let result = { grid: makeFilledGrid("#"), placements: [] };
+ 
+  while (result.placements.length < NUM_WORDS && attempts < MAX_RETRIES) {
+    const words = getRandomWords(NUM_WORDS);
+    result = buildCrossword(words);
+    attempts++;
+    if (attempts === MAX_RETRIES) {
+        console.warn(`Could only place ${result.placements.length} words after ${MAX_RETRIES} attempts.`);
+    }
+  }
+  return result;
 }
  
 // create an answers grid consistent with the puzzle grid
@@ -137,7 +239,7 @@ function makeEmptyAnswersFromGrid(grid) {
   return grid.map(row => row.map(cell => (cell === "#" ? null : "")));
 }
  
-// create locked grid (null for black, false for playable)
+// create locked grid (null for black, false for playable, true for correct)
 function makeLockedFromGrid(grid) {
   return grid.map(row => row.map(cell => (cell === "#" ? null : false)));
 }
@@ -154,11 +256,9 @@ function findPlacementForCell(placements, r, c) {
 }
  
 // --- Main component
-export default function CrosswordGame() {
-  const [puzzle, setPuzzle] = useState(() => {
-    const words = getRandomWords(10);
-    return buildCrossword(words);
-  });
+const CrosswordGame = () => {
+  // Use generatePuzzle for initial state
+  const [puzzle, setPuzzle] = useState(generatePuzzle);
  
   const [answers, setAnswers] = useState(() =>
     makeEmptyAnswersFromGrid(puzzle.grid)
@@ -168,10 +268,39 @@ export default function CrosswordGame() {
   const [message, setMessage] = useState("");
   const [activeRow, setActiveRow] = useState(null);
   const [activeCol, setActiveCol] = useState(null);
- 
   const { grid, placements } = puzzle;
+   const [secondsElapsed, setSecondsElapsed] = useState(0);
+  const [score, setScore] = useState(null);
  
-  // whenever the puzzle changes (newPuzzle), reset answers/locked/revealed
+ 
+ 
+  // Timer logic
+  useEffect(() => {
+    if (revealed) return; // stop timer when revealed
+    const timer = setInterval(() => {
+      setSecondsElapsed(prev => prev + 1);
+    }, 1000);
+ 
+    return () => clearInterval(timer);
+  }, [revealed]);
+ 
+  // Function to calculate score
+  function calculateScore(seconds) {
+    if (seconds <= 300) return 100;
+    if (seconds <= 600) return 90;
+    if (seconds <= 1800) return 70;
+    return 60;
+  }
+  useEffect(() => {
+    const totalCells = grid.flat().filter(cell => cell !== "#").length;
+    const lockedCells = locked.flat().filter(cell => cell === true).length;
+    if (lockedCells === totalCells) {
+      const finalScore = calculateScore(secondsElapsed);
+      setScore(finalScore);
+      setMessage(`🎉 Puzzle completed! Score: ${finalScore}`);
+    }
+  }, [locked, grid, secondsElapsed]);
+  // Reset state when puzzle changes
   useEffect(() => {
     setAnswers(makeEmptyAnswersFromGrid(grid));
     setLocked(makeLockedFromGrid(grid));
@@ -179,9 +308,63 @@ export default function CrosswordGame() {
     setMessage("");
     setActiveRow(null);
     setActiveCol(null);
-  }, [puzzle]);
+  }, [puzzle, grid]);
  
-  // handle single-cell change; compute nextAnswers and then check the relevant word
+  // Check single word containing (r,c) using ansGrid
+  const checkWordAt = useCallback((r, c, ansGrid = answers) => {
+    const p = findPlacementForCell(placements, r, c);
+    if (!p) return;
+ 
+    const { row, col, dir, word } = p;
+    let userWord = "";
+    let isFullyFilled = true;
+    let newLockedCells = [];
+ 
+    // Construct the user's word and check for completeness
+    for (let j = 0; j < word.length; j++) {
+      const currentR = row + (dir === "DOWN" ? j : 0);
+      const currentC = col + (dir === "ACROSS" ? j : 0);
+      const ch = ansGrid[currentR][currentC];
+ 
+      if (!ch) {
+        isFullyFilled = false;
+        break;
+      }
+      userWord += ch.toUpperCase();
+      newLockedCells.push({r: currentR, c: currentC});
+    }
+ 
+    if (!isFullyFilled) return; // Only check if the word is complete
+ 
+    if (userWord === word.toUpperCase()) {
+      // Correct! Lock the cells.
+      setLocked(prev => {
+        const copy = prev.map(rw => rw.slice());
+        newLockedCells.forEach(({r, c}) => copy[r][c] = true);
+        return copy;
+      });
+      setMessage(`✅ Correct! Word ${p.number} completed.`);
+    } else {
+      // Wrong! Clear the cells (unless they are part of another locked word).
+      setAnswers(prev => {
+        const copy = prev.map(rw => rw.slice());
+        let cleared = false;
+        newLockedCells.forEach(({r, c}) => {
+          if (!locked[r][c]) {
+            copy[r][c] = "";
+            cleared = true;
+          }
+        });
+        if (cleared) {
+          setMessage(`❌ Incorrect! Word ${p.number} cleared.`);
+        }
+        return copy; // FIX: Ensure the cleared copy is returned to update the state/UI.
+      });
+    }
+  }, [locked, placements]);
+ 
+ 
+  // handle single-cell change
   function handleChange(r, c, val) {
     if (locked[r][c] || revealed) return;
  
@@ -191,72 +374,10 @@ export default function CrosswordGame() {
  
     setAnswers(next);
  
+    // Check for correctness immediately if a letter is entered
     if (letter !== "") {
       checkWordAt(r, c, next);
     }
-  }
- 
-  // Check single word containing (r,c) using ansGrid (so it doesn't rely on async state)
-  function checkWordAt(r, c, ansGrid = answers) {
-    const p = findPlacementForCell(placements, r, c);
-    if (!p) return;
- 
-    const { row, col, dir, word } = p;
-    let userWord = "";
- 
-    if (dir === "ACROSS") {
-      for (let j = 0; j < word.length; j++) {
-        const ch = ansGrid[row][col + j];
-        if (!ch) return; // not fully filled
-        userWord += ch.toUpperCase();
-      }
-    } else {
-      for (let j = 0; j < word.length; j++) {
-        const ch = ansGrid[row + j][col];
-        if (!ch) return; // not fully filled
-        userWord += ch.toUpperCase();
-      }
-    }
- 
-    if (userWord === word.toUpperCase()) {
-      // lock those cells
-      setLocked(prev => {
-        const copy = prev.map(rw => rw.slice());
-        if (dir === "ACROSS") {
-          for (let j = 0; j < word.length; j++) copy[row][col + j] = true;
-        } else {
-          for (let j = 0; j < word.length; j++) copy[row + j][col] = true;
-        }
-        return copy;
-      });
-      setMessage(`✅ Correct: ${word.toUpperCase()}`);
-    } else {
-      // wrong -> clear those cells (but not the ones locked by other words)
-      setAnswers(prev => {
-        const copy = prev.map(rw => rw.slice());
-        if (dir === "ACROSS") {
-          for (let j = 0; j < word.length; j++) {
-            // only clear if that cell isn't locked already
-            if (!locked[row][col + j]) copy[row][col + j] = "";
-          }
-        } else {
-          for (let j = 0; j < word.length; j++) {
-            if (!locked[row + j][col]) copy[row + j][col] = "";
-          }
-        }
-        return copy;
-      });
-      setMessage(`❌ Incorrect. Try again.`);
-    }
-  }
- 
-  // Check button: check the active cell's word
-  function checkActiveWord() {
-    if (activeRow === null || activeCol === null) {
-      setMessage("Click a cell first to check its word.");
-      return;
-    }
-    checkWordAt(activeRow, activeCol, answers);
   }
  
   function revealAll() {
@@ -265,8 +386,8 @@ export default function CrosswordGame() {
   }
  
   function newPuzzle() {
-    const words = getRandomWords(10);
-    setPuzzle(buildCrossword(words));
+    // Use generatePuzzle to ensure 10 words are generated
+    setPuzzle(generatePuzzle());
   }
  
   // for UI: is cell part of active word?
@@ -281,92 +402,108 @@ export default function CrosswordGame() {
     }
   }
  
-  // styling
+ 
+  // Styling (using inline styles for single-file component simplicity)
   const styles = {
     container: {
-      fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial",
+      fontFamily: "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial",
+      backgroundColor: "#f9fafb",
+      minHeight: "100vh",
       padding: 20,
       display: "flex",
       justifyContent: "center"
     },
     gridWrap: {
-      background: "#fff",
-      padding: 18,
+      background: "transparent",
+      padding: 24,
       borderRadius: 12,
-      boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+      boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
       maxWidth: 900
     },
     grid: {
       display: "grid",
-      gridTemplateColumns: `repeat(${COLS}, 34px)`,
-      gap: 4,
-      marginTop: 10,
-      justifyContent: "center"
+      gridTemplateColumns: `repeat(${COLS}, 36px)`, // Slightly larger cells
+      gap: 3,
+      marginTop: 20,
+      justifyContent: "center",
+      border: "1px solid #e5e7eb"
     },
     cellInput: {
-      width: 34,
-      height: 34,
-      lineHeight: "34px",
+      width: 36,
+      height: 36,
+      lineHeight: "36px",
       boxSizing: "border-box",
       textAlign: "center",
-      border: "1px solid #d1d5db",
+      border: "1px solid #e5e7eb",
       fontWeight: 700,
-      fontSize: 16,
+      fontSize: 18,
       textTransform: "uppercase",
       background: "#fff",
       outline: "none",
       padding: 0,
-      userSelect: "none"
+      userSelect: "none",
+      transition: "background-color 0.1s"
     },
     black: {
-      width: 34,
-      height: 34,
-      background: "#111827",
+      width: 36,
+      height: 36,
+      background: "#1f2937",
       borderRadius: 4
     },
     number: {
       position: "absolute",
       top: 2,
       left: 4,
-      fontSize: 9,
+      fontSize: 12,
       color: "#6b7280",
-      fontWeight: 700
+      fontWeight: 900
     },
     cellWrap: {
       position: "relative",
-      width: 34,
-      height: 34
+      width: 36,
+      height: 36
     },
     lockedCell: {
-      background: "#bbf7d0"
+      background: "#5fe994ff" // Light green for correct
     },
     activeHighlight: {
-      background: "#f0f9ff"
+      background: "#eff6ff" // Light blue for active word
     },
     controls: {
-      marginTop: 14,
+      marginTop: 20,
       display: "flex",
-      gap: 8,
+      gap: 12,
       alignItems: "center",
-      flexWrap: "wrap"
+      flexWrap: "wrap",
+      padding: "10px 0"
     },
     btn: {
-      padding: "8px 12px",
+      padding: "10px 16px",
       borderRadius: 8,
       border: "none",
       cursor: "pointer",
-      fontWeight: 600
+      fontWeight: 600,
+      boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+      transition: "transform 0.1s, box-shadow 0.1s",
+      minWidth: 90
     }
   };
  
   return (
     <div style={styles.container}>
       <div style={styles.gridWrap}>
-        <h2 style={{ margin: 0 }}>🧩 Crossword Puzzle</h2>
-        <p style={{ marginTop: 6, marginBottom: 8 }}>
-          Fill in the crossword. Type letters, or click a cell and press <strong>Check</strong> to validate the current word.
-        </p>
- 
+        <h1 style={{ margin: 0, fontSize: 28, color: "#1f2937" }}>
+          🧩 C Crossword Challenge
+        </h1>
+        <p style={{ marginTop: 6, marginBottom: 12, color: "#4b5563" }}>
+  Fill in the code-themed crossword. Words are automatically checked when completed. ({placements.length} Words Placed)
+</p>
+<p style={{ marginTop: 0, marginBottom: 12, color: "#6b7280" }}>
+  Time: {Math.floor(secondsElapsed / 60)
+    .toString()
+    .padStart(2, "0")}:
+  {(secondsElapsed % 60).toString().padStart(2, "0")}
+</p>
         <div style={styles.grid}>
           {grid.map((rowArr, r) =>
             rowArr.map((cell, c) => {
@@ -385,7 +522,7 @@ export default function CrosswordGame() {
                 ...styles.cellInput,
                 background: isLocked ? styles.lockedCell.background : styles.cellInput.background,
                 ...(isActive && !isLocked ? styles.activeHighlight : {}),
-                borderRadius: 4,
+                borderRadius: 0, // Squares
                 caretColor: isLocked ? "transparent" : undefined
               };
  
@@ -409,42 +546,31 @@ export default function CrosswordGame() {
                     }}
                     onKeyDown={(e) => {
                       // quick navigation with arrows
-                      if (e.key === "ArrowRight") {
-                        e.preventDefault();
-                        // find next column that's not black
-                        for (let nc = c + 1; nc < COLS; nc++) {
-                          if (grid[r][nc] !== "#") {
-                            const el = document.querySelector(`input[data-pos='${r}-${nc}']`);
-                            if (el) el.focus();
-                            break;
-                          }
-                        }
-                      } else if (e.key === "ArrowLeft") {
-                        e.preventDefault();
-                        for (let nc = c - 1; nc >= 0; nc--) {
-                          if (grid[r][nc] !== "#") {
-                            const el = document.querySelector(`input[data-pos='${r}-${nc}']`);
-                            if (el) el.focus();
-                            break;
-                          }
-                        }
-                      } else if (e.key === "ArrowDown") {
-                        e.preventDefault();
-                        for (let nr = r + 1; nr < ROWS; nr++) {
-                          if (grid[nr][c] !== "#") {
-                            const el = document.querySelector(`input[data-pos='${nr}-${c}']`);
-                            if (el) el.focus();
-                            break;
-                          }
-                        }
-                      } else if (e.key === "ArrowUp") {
-                        e.preventDefault();
-                        for (let nr = r - 1; nr >= 0; nr--) {
-                          if (grid[nr][c] !== "#") {
-                            const el = document.querySelector(`input[data-pos='${nr}-${c}']`);
-                            if (el) el.focus();
-                            break;
-                          }
+                      let nextR = r;
+                      let nextC = c;
+                      if (e.key === "ArrowRight") { nextC = c + 1; e.preventDefault(); }
+                      else if (e.key === "ArrowLeft") { nextC = c - 1; e.preventDefault(); }
+                      else if (e.key === "ArrowDown") { nextR = r + 1; e.preventDefault(); }
+                      else if (e.key === "ArrowUp") { nextR = r - 1; e.preventDefault(); }
+ 
+                      if (nextR !== r || nextC !== c) {
+                        let found = false;
+                        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+                            const step = e.key === "ArrowRight" ? 1 : -1;
+                            for (let nc = c + step; (step > 0 ? nc < COLS : nc >= 0); nc += step) {
+                                if (grid[r][nc] !== "#") {
+                                    const el = document.querySelector(`input[data-pos='${r}-${nc}']`);
+                                    if (el) { el.focus(); found = true; break; }
+                                }
+                            }
+                        } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                             const step = e.key === "ArrowDown" ? 1 : -1;
+                             for (let nr = r + step; (step > 0 ? nr < ROWS : nr >= 0); nr += step) {
+                                if (grid[nr][c] !== "#") {
+                                    const el = document.querySelector(`input[data-pos='${nr}-${c}']`);
+                                    if (el) { el.focus(); found = true; break; }
+                                }
+                            }
                         }
                       }
                     }}
@@ -457,34 +583,50 @@ export default function CrosswordGame() {
         </div>
  
         <div style={styles.controls}>
-      {/*}   <button onClick={checkActiveWord} style={{ ...styles.btn, background: "#0ea5a0", color: "#fff" }}>
-            Check
-          </button> */}
-          <button onClick={revealAll} style={{ ...styles.btn, background: "#fde68a" }}>
-            Reveal
+          <button onClick={revealAll} style={{ ...styles.btn, background: "#fcd34d" }}>
+            Reveal All
           </button>
-          <button onClick={newPuzzle} style={{ ...styles.btn, background: "#f87171", color: "#fff" }}>
-            New
+          <button onClick={newPuzzle} style={{ ...styles.btn, background: "#ef4444", color: "#fff" }}>
+            New Puzzle
           </button>
  
-          <div style={{ marginLeft: "auto", color: "#374151", fontSize: 14 }}>
+          <div style={{ marginLeft: "auto", color: "#10b981", fontWeight: 600 }}>
             {message}
           </div>
         </div>
  
-        <div style={{ marginTop: 12, fontSize: 16, fontWeight: 700 }}>Clues</div>
-        <ul style={{ fontSize: 14, color: "#111", marginTop: 6, columns: 2 }}>
-          {placements.map((p, i) => (
-            <li key={i} style={{ marginBottom: 6 }}>
-              <strong>{p.number}. {p.dir}</strong> – {p.clue}
-            </li>
-          ))}
-        </ul>
+        <h3 style={{ marginTop: 16, marginBottom: 8, color: "#1f2937" }}>Clues</h3>
+        <div style={{ display: "flex", gap: "40px", flexWrap: "wrap", fontSize: 14 }}>
+            <div>
+                <h4 style={{ margin: 0, marginBottom: 5, color: "#4b5563" }}>ACROSS</h4>
+                <ul style={{ paddingLeft: 20, margin: 0 }}>
+                    {/* Words starting at the same cell share the same number. */}
+                    {placements.filter(p => p.dir === "ACROSS").sort((a, b) => a.number - b.number).map((p, i) => (
+                        <li key={i} style={{ marginBottom: 6 }}>
+                            <strong>{p.number}.</strong> {p.clue}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+            <div>
+                <h4 style={{ margin: 0, marginBottom: 5, color: "#4b5563" }}>DOWN</h4>
+                <ul style={{ paddingLeft: 20, margin: 0 }}>
+                    {/* Words starting at the same cell share the same number. */}
+                    {placements.filter(p => p.dir === "DOWN").sort((a, b) => a.number - b.number).map((p, i) => (
+                        <li key={i} style={{ marginBottom: 6 }}>
+                            <strong>{p.number}.</strong> {p.clue}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </div>
  
-        <div style={{ marginTop: 10, fontSize: 13, color: "#6b7280" }}>
-          Tip: Use arrow keys to navigate cells. When a word is completed it will be validated automatically.
+        <div style={{ marginTop: 20, fontSize: 13, color: "#6b7280", borderTop: "1px solid #e5e7eb", paddingTop: 10 }}>
+          Tip: Use arrow keys to navigate cells quickly. The current word is highlighted in light blue.
         </div>
       </div>
     </div>
   );
 }
+ 
+export default CrosswordGame;
