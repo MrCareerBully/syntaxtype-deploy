@@ -94,8 +94,8 @@ public class ScoringController {
 
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
     @PatchMapping("/{scoringId}/words-per-minute")
-    public ResponseEntity<ScoringDTO> updateTotalScore(@PathVariable Long scoringId, @RequestParam Integer newWpm) {
-        ScoringDTO updated = scoringService.updateTotalScore(scoringId, newWpm);
+    public ResponseEntity<ScoringDTO> updateTotalScore(@PathVariable Long scoringId, @RequestParam Integer newTotalScore) {
+        ScoringDTO updated = scoringService.updateTotalScore(scoringId, newTotalScore);
         if (updated != null) {
             return ResponseEntity.ok(updated);
         }
@@ -103,7 +103,7 @@ public class ScoringController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
-    @PatchMapping("/{scoringId}/correctAnswers")
+    @PatchMapping("/{scoringId}/correct-answers")
     public ResponseEntity<ScoringDTO> updateCorrectAnswers(@PathVariable Long scoringId, @RequestParam Integer newCorrectAnswers) {
         ScoringDTO updated = scoringService.updateCorrectAnswers(scoringId, newCorrectAnswers);
         if (updated != null) {
@@ -113,7 +113,7 @@ public class ScoringController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
-    @PatchMapping("/{scoringId}/total-words-typed")
+    @PatchMapping("/{scoringId}/wrong-answers")
     public ResponseEntity<ScoringDTO> updateWrongAnswers(@PathVariable Long scoringId, @RequestParam Integer newWrongAnswers) {
         ScoringDTO updated = scoringService.updateWrongAnswers(scoringId, newWrongAnswers);
         if (updated != null) {
@@ -131,6 +131,39 @@ public class ScoringController {
         }
         return ResponseEntity.notFound().build();
     }
+
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
+    @PatchMapping("/{scoringId}/average-time")
+    public ResponseEntity<ScoringDTO> updateAverageTimeSpentBetweenWords(@PathVariable Long scoringId, @RequestParam Double newAverageTime) {
+        ScoringDTO updated = scoringService.updateAverageTimeSpentBetweenWords(scoringId, newAverageTime);
+        if(updated != null) {
+            return ResponseEntity.ok(updated);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
+    @PatchMapping("/{scoringId}/answered-words")
+    public ResponseEntity<ScoringDTO> updateAnsweredWords(@PathVariable Long scoringId, @RequestParam List<String> newAnsweredWords) {
+        ScoringDTO updated = scoringService.updateAnsweredWords(scoringId, newAnsweredWords)
+        if(updated != null) {
+            return ResponseEntity.ok(updated);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
+    @PatchMapping("/{scoringId}/wrong-words")
+    public ResponseEntity<ScoringDTO> updateWrongWords(@PathVariable Long scoringId, @RequestParam List<String> newWrongWords) {
+        ScoringDTO updated = scoringService.updateWrongWords(scoringId, newWrongWords);
+        if(updated != null) {
+            return ResponseEntity.ok(updated);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
+    @PatchMapping("/{scoringId}/")
 
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
     @PatchMapping("/{scoringId}/category")
