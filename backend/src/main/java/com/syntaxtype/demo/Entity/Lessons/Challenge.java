@@ -26,7 +26,7 @@ public class Challenge {
     @Enumerated(EnumType.STRING)
     private ChallengeType type;
 
-    @Lob
+    // @Lob
     @Column(columnDefinition = "TEXT")
     private String paragraph;
 
