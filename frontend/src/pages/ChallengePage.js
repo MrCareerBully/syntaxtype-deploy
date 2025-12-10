@@ -47,33 +47,42 @@ export default function ChallengePage() {
       sessionStorage.setItem("fallingChallenge", JSON.stringify(challenge));
     }
     setSelectedChallengeDetails(challenge); // Set selected challenge details
+    console.log('Selected challenge:', challenge); // Debug: log challenge object to verify ID field
   };
   const handleEditChallenge = (challenge) => {
     setSelectedChallengeDetails(challenge);
+    console.log('Editing challenge:', challenge); // Debug: log challenge object
   };
  
   // Delete handler: delete challenge via API, then refresh list
   const handleDeleteChallenge = async (challenge) => {
     try {
+      // Use challengeId if available, fallback to id
+      const challengeId = challenge.challengeId || challenge.id;
+      if (!challengeId) {
+        alert('Error: Challenge ID not found');
+        return;
+      }
+
       const url = challenge.paragraph
-        ? `${API_BASE}api/challenges/${challenge.id}`
-        : `${API_BASE}api/challenges/falling/${challenge.id}`;
- 
+        ? `${API_BASE}/api/challenges/${challengeId}`
+        : `${API_BASE}/api/challenges/falling/${challengeId}`;
+
       const response = await fetch(url, {
         method: 'DELETE',
       });
- 
+
       if (response.ok) {
         alert('Challenge deleted!');
         // Refresh challenges
         if (challenge.paragraph) {
-          setNormalChallenges((prev) => prev.filter(c => c.id !== challenge.id));
+          setNormalChallenges((prev) => prev.filter(c => (c.challengeId || c.id) !== challengeId));
         } else {
-          setFallingChallenges((prev) => prev.filter(c => c.id !== challenge.id));
+          setFallingChallenges((prev) => prev.filter(c => (c.challengeId || c.id) !== challengeId));
         }
- 
+
         // Clear selection if deleted challenge is selected
-        if (selectedChallengeDetails?.id === challenge.id) {
+        if ((selectedChallengeDetails?.challengeId || selectedChallengeDetails?.id) === challengeId) {
           setSelectedChallengeDetails(null);
         }
       } else {
@@ -82,9 +91,7 @@ export default function ChallengePage() {
     } catch (error) {
       console.error('Delete error:', error);
     }
-  };
- 
-  return (
+  };  return (
     <>
   {/* Navbar OUTSIDE the container */}
   <nav className="navbar">
@@ -220,69 +227,69 @@ export default function ChallengePage() {
 }
  
 // List Component to Display Challenges
-function ChallengeList({ challenges, type, onSelect,onEdit, onDelete }) {
+function ChallengeList({ challenges, type, onSelect, onEdit, onDelete }) {
   return (
     <table className="challenges-table">
       <thead>
         <tr>
           <th>{type} Challenge Type</th>
-         
+          <th>Preview</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        {challenges.map((challenge, index) => (
-          <tr
-            key={index}
-            className="challenge-item"
-            onClick={() => onSelect(challenge)} // Handle click
-          >
-            <td>{type} Challenge</td>
-            <td>
-              {challenge.paragraph
-                ? challenge.paragraph.slice(0, 50) + '...'
-                : (challenge.words && challenge.words.length > 0
-                    ? challenge.words.join(', ').slice(0, 50) + '...'
-                    : 'No words available')}
-            </td>
-            <td>
-             <button
-      className="view-button"
-      onClick={(e) => {
-        e.stopPropagation();
-        onEdit(challenge);
-      }}
-    >
-      Edit
-    </button>
-    <button
-      className="delete-button"
-      onClick={(e) => {
-        e.stopPropagation();
-        onDelete(challenge);
-      }}
-      style={{ marginLeft: '35px', color: 'white', backgroundColor: 'red',borderRadius:'5px', height:'30px' }}>
-      Delete
-    </button>
-  </td>
-  <td>
-    <button
-      className="view-button"
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect(challenge);
-      }}
-    >
-      View
-    </button>
-            </td>
-          </tr>
-        ))}
+        {challenges.map((challenge) => {
+          const challengeId = challenge.challengeId || challenge.id;
+          return (
+            <tr
+              key={challengeId}
+              className="challenge-item"
+              onClick={() => onSelect(challenge)}
+            >
+              <td>{type} Challenge</td>
+              <td>
+                {challenge.paragraph
+                  ? challenge.paragraph.slice(0, 50) + '...'
+                  : (challenge.words && challenge.words.length > 0
+                      ? challenge.words.join(', ').slice(0, 50) + '...'
+                      : 'No words available')}
+              </td>
+              <td>
+                <button
+                  className="view-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(challenge);
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  className="delete-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm('Are you sure you want to delete this challenge?')) {
+                      onDelete(challenge);
+                    }
+                  }}
+                  style={{
+                    marginLeft: '35px',
+                    color: 'white',
+                    backgroundColor: 'red',
+                    borderRadius: '5px',
+                    height: '30px',
+                  }}
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
-}
- 
-// Normal Typing Challenge Form
+}// Normal Typing Challenge Form
 function NormalTypingChallengeForm({ selectedChallenge, onSaved }) {
   const [paragraph, setParagraph] = useState('');
  
@@ -295,10 +302,11 @@ function NormalTypingChallengeForm({ selectedChallenge, onSaved }) {
   const handleSave = async () => {
     try {
       const method = selectedChallenge ? 'PUT' : 'POST';
+      const challengeId = selectedChallenge?.challengeId || selectedChallenge?.id;
       const url = selectedChallenge
-        ? `${API_BASE}/api/challenges/${selectedChallenge.id}`
+        ? `${API_BASE}/api/challenges/${challengeId}`
         : `${API_BASE}/api/challenges`;
- 
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -353,10 +361,11 @@ function FallingTypingChallengeForm({ selectedChallenge, onSaved,fallingSpeed,
     if (fallingWords.trim()) {
       try {
         const method = selectedChallenge ? 'PUT' : 'POST';
+        const challengeId = selectedChallenge?.challengeId || selectedChallenge?.id;
         const url = selectedChallenge
-          ? `${API_BASE}/api/challenges/${selectedChallenge.id}`
+          ? `${API_BASE}/api/challenges/${challengeId}`
           : `${API_BASE}/api/challenges/falling`;
- 
+
         const response = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
@@ -771,13 +780,14 @@ function AdvancedFallingTypingChallengeForm({
  
   const handleSave = async () => {
     if (!fallingWords.trim()) return;
- 
+
     try {
       const method = selectedChallenge ? 'PUT' : 'POST';
+      const challengeId = selectedChallenge?.challengeId || selectedChallenge?.id;
       const url = selectedChallenge
-            ? `${API_BASE}/api/challenges/falling/advanced/${selectedChallenge.challengeId}`
+            ? `${API_BASE}/api/challenges/falling/advanced/${challengeId}`
             : `${API_BASE}/api/challenges/falling/advanced`;
- 
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
