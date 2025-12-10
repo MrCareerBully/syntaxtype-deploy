@@ -17,6 +17,7 @@ import {
     Alert,
     CircularProgress
 } from '@mui/material';
+import { API_BASE } from '../utils/api';
 
 const RegisterPage = () => {
     const [username, setUsername] = useState('');
