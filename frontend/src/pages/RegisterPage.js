@@ -53,7 +53,7 @@ const RegisterPage = () => {
         setLoading(true);
 
         try {
-            const response = await axios.post('/api/auth/register/student', {
+            const response = await axios.post(`${API_BASE}/api/auth/register/student`, {
                 username,
                 email,
                 password,
