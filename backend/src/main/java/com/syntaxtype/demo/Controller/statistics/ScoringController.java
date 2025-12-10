@@ -145,7 +145,7 @@ public class ScoringController {
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
     @PatchMapping("/{scoringId}/answered-words")
     public ResponseEntity<ScoringDTO> updateAnsweredWords(@PathVariable Long scoringId, @RequestParam List<String> newAnsweredWords) {
-        ScoringDTO updated = scoringService.updateAnsweredWords(scoringId, newAnsweredWords)
+        ScoringDTO updated = scoringService.updateAnsweredWords(scoringId, newAnsweredWords);
         if(updated != null) {
             return ResponseEntity.ok(updated);
         }
@@ -162,8 +162,9 @@ public class ScoringController {
         return ResponseEntity.notFound().build();
     }
 
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
-    @PatchMapping("/{scoringId}/")
+    // @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
+    // @PatchMapping("/{scoringId}/")
+    // public 
 
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT','USER')")
     @PatchMapping("/{scoringId}/category")
